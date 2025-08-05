@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lui Calculator</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f5f6fa 0%, #e0e5ec 100%);
+      font-family: 'San Francisco', 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .calculator {
+      background: #fff;
+      border-radius: 30px;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+      padding: 40px 30px 30px 30px;
+      width: 320px;
+      position: relative;
+    }
+    .watermark {
+      position: absolute;
+      bottom: 10px;
+      right: 20px;
+      font-size: 1.1em;
+      color: #d1d1d1;
+      font-weight: bold;
+      pointer-events: none;
+      user-select: none;
+      opacity: 0.5;
+    }
+    .display {
+      width: 100%;
+      height: 60px;
+      background: #f0f0f3;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      font-size: 2em;
+      text-align: right;
+      padding: 10px 20px;
+      box-sizing: border-box;
+      color: #333;
+      border: none;
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+    }
+    button {
+      height: 50px;
+      border-radius: 15px;
+      border: none;
+      font-size: 1.3em;
+      background: #f0f0f3;
+      color: #333;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    button:active {
+      background: #e0e5ec;
+    }
+    .operator {
+      background: #007aff;
+      color: #fff;
+    }
+    .equals {
+      background: #34c759;
+      color: #fff;
+      grid-column: span 2;
+    }
+    .clear {
+      background: #ff3b30;
+      color: #fff;
+    }
+    /* Popup styling */
+    .popup {
+      display: none;
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+      padding: 30px 40px;
+      font-size: 2em;
+      color: #333;
+      z-index: 1000;
+      text-align: center;
+    }
+    .popup.show {
+      display: block;
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <input type="text" class="display" id="display" readonly>
+    <div class="buttons">
+      <button onclick="press('7')">7</button>
+      <button onclick="press('8')">8</button>
+      <button onclick="press('9')">9</button>
+      <button class="operator" onclick="press('/')">÷</button>
+      <button onclick="press('4')">4</button>
+      <button onclick="press('5')">5</button>
+      <button onclick="press('6')">6</button>
+      <button class="operator" onclick="press('*')">×</button>
+      <button onclick="press('1')">1</button>
+      <button onclick="press('2')">2</button>
+      <button onclick="press('3')">3</button>
+      <button class="operator" onclick="press('-')">−</button>
+      <button onclick="press('0')">0</button>
+      <button onclick="press('.')">.</button>
+      <button class="clear" onclick="clearDisplay()">C</button>
+      <button class="operator" onclick="press('+')">+</button>
+      <button class="equals" onclick="calculateResult()">=</button>
+    </div>
+    <div class="watermark">lui</div>
+  </div>
+  <div class="popup" id="popup"></div>
+  <script>
+    let display = document.getElementById('display');
+    let popup = document.getElementById('popup');
+    let current = '';
+    function press(val) {
+      current += val;
+      display.value = current;
+    }
+    function clearDisplay() {
+      current = '';
+      display.value = '';
+    }
+    function calculateResult() {
+      // Parse the current input for two numbers and an operator
+      const match = current.match(/(-?\d*\.?\d+)\s*([+\-*/])\s*(-?\d*\.?\d+)/);
+      if (!match) {
+        showPopup('Error');
+        return;
+      }
+      const num1 = match[1];
+      const op = match[2];
+      const num2 = match[3];
+      fetch('http://127.0.0.1:5000/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ num1, op, num2 })
+      })
+      .then(response => response.json())
+      .then(data => {
+        showPopup(data.result);
+        current = data.result;
+        display.value = current;
+      })
+      .catch(() => {
+        showPopup('Error');
+        current = '';
+        display.value = '';
+      });
+    }
+    function showPopup(msg) {
+      popup.textContent = msg;
+      popup.classList.add('show');
+      setTimeout(() => {
+        popup.classList.remove('show');
+      }, 1500);
+    }
+  </script>
+</body>
+</html>
